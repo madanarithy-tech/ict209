@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Digital Researching Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Sans+Khmer:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,sans-serif;color:#292524;
+background:radial-gradient(60% 45% at 6% 0%,rgba(196,181,253,.28),transparent 62%),radial-gradient(50% 40% at 100% 8%,rgba(94,234,212,.22),transparent 62%),radial-gradient(60% 50% at 75% 100%,rgba(184,151,90,.12),transparent 60%),#faf8f3;background-attachment:fixed}
+h1,h2,h3,.serif{font-family:'Cormorant Garamond',Georgia,serif;font-weight:700}
+.wc{background:radial-gradient(120% 80% at 0% 0%,rgba(196,181,253,.2),transparent 55%),radial-gradient(100% 70% at 100% 100%,rgba(94,234,212,.16),transparent 55%),#fffdf9;box-shadow:0 10px 30px -14px rgba(91,76,140,.25)}
+@keyframes rise{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-95px);opacity:0}}
+@keyframes vap{0%{transform:translateY(0) scale(.6);opacity:.5}100%{transform:translateY(-80px) scale(2);opacity:0}}
+@keyframes flame{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.18) scaleX(.9)}}
+@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
+@keyframes rod{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+body.km,body.km h1,body.km h2,body.km h3,body.km .serif{font-family:'Noto Sans Khmer',Inter,sans-serif;line-height:1.7}
+@keyframes tilt{0%{opacity:0;transform:rotate(0)}20%,85%{opacity:1;transform:rotate(62deg)}100%{opacity:0;transform:rotate(0)}}
+@keyframes stream{0%{opacity:1;transform:scaleY(0)}30%,85%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1)}}
+@keyframes pf{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(95px)}}
+.bub{position:absolute;bottom:6px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9);border:1px solid rgba(100,116,139,.4);animation:rise 1.6s infinite}
+.vap{position:absolute;top:-8px;width:26px;height:26px;border-radius:50%;background:rgba(148,163,184,.4);filter:blur(7px);animation:vap 2.4s infinite}
+.conf{position:fixed;top:-20px;width:9px;height:14px;animation:fall 3.2s linear forwards;z-index:60}
+.bench{background:linear-gradient(#fbf9f4,#f3eee4 58%,#e3d9c4 58%,#efe8d8)}
+@media (prefers-reduced-motion:reduce){.bub,.vap,.conf{animation:none}}
+</style></head>
+<body><div id="root" class="h-full"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useMemo}=React;
+let LANG='en';const T=x=>LANG==='km'&&KM[x]||x;
+const KM={"Digital Researching Lab":"មន្ទីរពិសោធន៍ស្រាវជ្រាវឌីជីថល","Lab Bench":"តុពិសោធន៍","Dashboard":"ផ្ទាំងគ្រប់គ្រង","Inventory":"សារពើភ័ណ្ឌ","Safety Manual":"សៀវភៅណែនាំសុវត្ថិភាព","Achievements":"សមិទ្ធិផល",
+"Good to see you, Alex":"រីករាយដែលបានជួបអ្នកម្តងទៀត Alex","Your bench is clean and the fume hood is on.":"តុពិសោធន៍របស់អ្នកស្អាត ហើយប្រព័ន្ធបូមផ្សែងកំពុងដំណើរការ។","Experiments completed":"ការពិសោធន៍បានបញ្ចប់","Safety score":"ពិន្ទុសុវត្ថិភាព","Resume last experiment":"បន្តការពិសោធន៍ចុងក្រោយ","Open an empty bench":"បើកតុពិសោធន៍ទទេ","Experiment catalog":"បញ្ជីការពិសោធន៍","Start experiment":"ចាប់ផ្តើមការពិសោធន៍","Safety check & start":"ពិនិត្យសុវត្ថិភាព និងចាប់ផ្តើម","Easy":"ងាយ","Medium":"មធ្យម","Hard":"ពិបាក","20 min":"២០ នាទី","25 min":"២៥ នាទី","30 min":"៣០ នាទី",
+"Acid-Base Titration":"ទីត្រាស្យុងអាស៊ីត-បាស","Copper Sulfate Crystallization":"ការធ្វើគ្រីស្តាល់ស៊ុលហ្វាតទង់ដែង","Exothermic Metal Reactions":"ប្រតិកម្មលោហៈបញ្ចេញកំដៅ",
+"Neutralise sodium hydroxide with hydrochloric acid, using phenolphthalein to see the endpoint.":"បន្សាបសូដ្យូមអ៊ីដ្រុកស៊ីតដោយអាស៊ីតអ៊ីដ្រូក្លរិក ហើយប្រើហ្វេណុលតាលេអ៊ីនដើម្បីមើលចំណុចបញ្ចប់។","Heat a copper sulfate solution to evaporate water and grow blue crystals.":"កំដៅដំណោះស្រាយស៊ុលហ្វាតទង់ដែងឲ្យទឹកហួត ហើយបង្កើតគ្រីស្តាល់ពណ៌ខៀវ។","React magnesium with acid and measure the heat released. Requires the safety check.":"ធ្វើប្រតិកម្មម៉ាញេស្យូមជាមួយអាស៊ីត ហើយវាស់កំដៅដែលបញ្ចេញ។ ត្រូវការការពិនិត្យសុវត្ថិភាព។",
+"Acids & Bases":"អាស៊ីត និងបាស","Salts":"អំបិល","Metals":"លោហៈ","Indicators":"សារធាតុបង្ហាញ","Glassware":"ប្រដាប់កញ្ចក់","Tools":"ឧបករណ៍","Pour 25 mL":"ចាក់ ២៥ មីលីលីត្រ","Dropper 2 mL":"ដំណក់ ២ មីលីលីត្រ","Stirrer":"ឧបករណ៍កូរ","Burner":"ចង្ក្រាន","Flame":"អណ្តាតភ្លើង","Clear bench":"សម្អាតតុ","Free play":"ពិសោធន៍ដោយសេរី",
+"Live data":"ទិន្នន័យផ្ទាល់","Temperature":"សីតុណ្ហភាព","Mass":"ម៉ាស","⚠ Safety alerts":"⚠ ការជូនដំណឹងសុវត្ថិភាព","All clear. Goggles on.":"គ្មានគ្រោះថ្នាក់ទេ។ សូមពាក់វ៉ែនតាការពារ។","Add a container to see meters.":"បន្ថែមធុងដើម្បីមើលម៉ែត្រ។","Drag a beaker from the Glassware tab to start.":"អូសកែវបេកឺពីផ្ទាំងប្រដាប់កញ្ចក់ដើម្បីចាប់ផ្តើម។",
+"Drag items onto the bench, or tap to add. Tap a chemical to pour into the selected container.":"អូសរបស់ទៅលើតុ ឬចុចដើម្បីបន្ថែម។ ចុចសារធាតុគីមីដើម្បីចាក់ចូលធុងដែលបានជ្រើស។","Nothing matches that search.":"រកមិនឃើញទេ។","Search chemicals and tools":"ស្វែងរកសារធាតុគីមី និងឧបករណ៍",
+"Place a beaker on the bench":"ដាក់កែវបេកឺលើតុ","Add 25 mL NaOH":"ដាក់ NaOH ២៥ មីលីលីត្រ","Add phenolphthalein (solution turns pink)":"ដាក់ហ្វេណុលតាលេអ៊ីន (ដំណោះស្រាយប្រែជាផ្កាឈូក)","Add HCl until the pink disappears (pH near 7)":"ដាក់ HCl រហូតពណ៌ផ្កាឈូកបាត់ (pH ប្រហែល ៧)","Place a beaker and a Bunsen burner":"ដាក់កែវបេកឺ និងចង្ក្រានប៊ុនសិន","Add 50 mL copper sulfate":"ដាក់ស៊ុលហ្វាតទង់ដែង ៥០ មីលីលីត្រ","Heat the beaker above 90 °C (select it, turn on burner)":"កំដៅកែវលើស ៩០°C (ជ្រើសវា ហើយបើកចង្ក្រាន)","Evaporate to under 25 mL":"ហួតឲ្យនៅក្រោម ២៥ មីលីលីត្រ","Add 25 mL HCl":"ដាក់ HCl ២៥ មីលីលីត្រ","Add a metal (Mg or Zn) and watch for bubbles":"ដាក់លោហៈ (Mg ឬ Zn) ហើយមើលពពុះ","Reach above 30 °C":"ឡើងលើស ៣០°C",
+"Hydrochloric acid 1M":"អាស៊ីតអ៊ីដ្រូក្លរិក 1M","Sodium hydroxide":"សូដ្យូមអ៊ីដ្រុកស៊ីត","Distilled water":"ទឹកចម្រាញ់","Copper(II) sulfate":"ស៊ុលហ្វាតទង់ដែង","Table salt (NaCl)":"អំបិលម្ហូប (NaCl)","Zinc granules":"គ្រាប់ស័ង្កសី","Magnesium ribbon":"ខ្សែម៉ាញេស្យូម","Phenolphthalein":"ហ្វេណុលតាលេអ៊ីន","Beaker 250 mL":"កែវបេកឺ ២៥០ មីលីលីត្រ","Conical flask":"ដបកោណ","Bunsen burner":"ចង្ក្រានប៊ុនសិន","Thermometer":"ទែម៉ូម៉ែត្រ","Dropper pipette":"ទុយោដំណក់",
+"Liquid":"វត្ថុរាវ","Pellets":"គ្រាប់","Crystals":"គ្រីស្តាល់","Powder":"ម្សៅ","Granules":"គ្រាប់ល្អិត","Ribbon":"ខ្សែ","Beaker":"កែវបេកឺ","Flask":"ដបកោណ","Bunsen":"ប៊ុនសិន","on":"បើក","off":"បិទ","Start":"ចាប់ផ្តើម","Stop":"ឈប់",
+"Experiment complete":"ការពិសោធន៍បានបញ្ចប់","Chemical equation":"សមីការគីមី","Back to dashboard":"ត្រឡប់ទៅផ្ទាំងគ្រប់គ្រង","Enter the lab":"ចូលមន្ទីរពិសោធន៍","Safety check passed":"ការពិនិត្យសុវត្ថិភាពជាប់","Safety check · question":"ការពិនិត្យសុវត្ថិភាព · សំណួរ","of 3":"នៃ ៣",
+"Ask the Lab Assistant":"សួរជំនួយការមន្ទីរពិសោធន៍","Hi! I can explain reactions, safety, or what is happening on your bench.":"សួស្តី! ខ្ញុំអាចពន្យល់អំពីប្រតិកម្ម សុវត្ថិភាព ឬអ្វីដែលកំពុងកើតឡើងលើតុរបស់អ្នក។","Thinking…":"កំពុងគិត…","Send":"ផ្ញើ","Ask about any reaction or experiment…":"សួរអំពីប្រតិកម្ម ឬការពិសោធន៍…","Why did my solution turn pink?":"ហេតុអ្វីដំណោះស្រាយខ្ញុំប្រែជាពណ៌ផ្កាឈូក?","How do I dilute acid safely?":"តើខ្ញុំរំលាយអាស៊ីតដោយសុវត្ថិភាពដូចម្តេច?","What is happening in my beaker?":"តើមានអ្វីកើតឡើងក្នុងកែវរបស់ខ្ញុំ?"};
+function tx(o){const m=o.match(/^(\s*)([\s\S]*?)(\s*)$/),v=LANG==='km'&&KM[m[2]];return v?m[1]+v+m[3]:o}
+function applyLang(){const w=document.createTreeWalker(document.getElementById('root'),NodeFilter.SHOW_TEXT);let n;
+ while(n=w.nextNode()){if(n.__t!==undefined&&n.data!==n.__t)n.__o=n.data;else if(n.__o===undefined)n.__o=n.data;const r=tx(n.__o);if(n.data!==r)n.data=r;n.__t=n.data}}
+const KB=[[/neutral|titrat|pink|phenol|naoh/,'HCl + NaOH → NaCl + H₂O. It is exothermic, so the temperature rises. Phenolphthalein is pink above pH 8.2 and colourless below, so the colour change shows the endpoint.','HCl + NaOH → NaCl + H₂O។ ប្រតិកម្មនេះបញ្ចេញកំដៅ ដូច្នេះសីតុណ្ហភាពឡើង។ ហ្វេណុលតាលេអ៊ីនមានពណ៌ផ្កាឈូកពេល pH លើស ៨.២ ហើយគ្មានពណ៌ពេលក្រោមនោះ។'],
+[/zinc|magnes|metal|bubble|gas|\bzn\b|\bmg\b/,'Metals such as Mg and Zn react with HCl to release hydrogen gas (the bubbles) and heat: Mg + 2HCl → MgCl₂ + H₂. Keep flames away because hydrogen is flammable.','លោហៈដូចជា Mg និង Zn ធ្វើប្រតិកម្មជាមួយ HCl បញ្ចេញឧស្ម័នអ៊ីដ្រូសែន (ពពុះ) និងកំដៅ៖ Mg + 2HCl → MgCl₂ + H₂។ សូមដាក់ភ្លើងឲ្យឆ្ងាយ ព្រោះអ៊ីដ្រូសែនឆេះ។'],
+[/copper|cuso4|precipit|crystal/,'Copper sulfate solution is blue. Adding NaOH forms pale blue Cu(OH)₂ precipitate. Heating evaporates the water and blue CuSO₄ crystals form.','ដំណោះស្រាយស៊ុលហ្វាតទង់ដែងមានពណ៌ខៀវ។ ការដាក់ NaOH បង្កើតកករ Cu(OH)₂ ពណ៌ខៀវស្រាល។ ការកំដៅធ្វើឲ្យទឹកហួត ហើយគ្រីស្តាល់ CuSO₄ ពណ៌ខៀវកកើតឡើង។'],
+[/safe|dilut|splash|goggle/,'Always add acid to water, never water to acid. Wear goggles, gloves and a lab coat, and rinse splashes with running water for 15 minutes.','ត្រូវចាក់អាស៊ីតចូលទឹកជានិច្ច កុំចាក់ទឹកចូលអាស៊ីត។ ពាក់វ៉ែនតា ស្រោមដៃ និងអាវមន្ទីរពិសោធន៍ ហើយលាងកន្លែងប៉ះដោយទឹកហូរ ១៥ នាទី។']];
+const KBD=['I can explain neutralisation, metal–acid reactions, precipitates, crystallisation and safety. Try asking, “Why did my solution turn pink?”','ខ្ញុំអាចពន្យល់អំពីការបន្សាប ប្រតិកម្មលោហៈជាមួយអាស៊ីត កករ គ្រីស្តាល់ និងសុវត្ថិភាព។'];
+const uid=()=>Math.random().toString(36).slice(2,8);
+const SOL=['zn','mg'];
+const CHEMS={
+ hcl:{n:'Hydrochloric acid 1M',cat:'Acids & Bases',e:'🧪',f:'liquid',pc:'#fde68a'},naoh:{n:'Sodium hydroxide',cat:'Acids & Bases',e:'⚪',f:'pellet',pc:'#f8fafc'},
+ water:{n:'Distilled water',cat:'Acids & Bases',e:'💧',f:'liquid',pc:'#7dd3fc'},cuso4:{n:'Copper(II) sulfate',cat:'Salts',e:'🔷',f:'crystal',pc:'#2563eb'},
+ nacl:{n:'Table salt (NaCl)',cat:'Salts',e:'🧂',f:'powder',pc:'#ffffff'},zn:{n:'Zinc granules',cat:'Metals',e:'🪨',f:'granule',pc:'#94a3b8'},
+ mg:{n:'Magnesium ribbon',cat:'Metals',e:'🎗️',f:'ribbon',pc:'#e2e8f0'},phph:{n:'Phenolphthalein',cat:'Indicators',e:'🩷',f:'liquid',pc:'#fbcfe8'}};
+const FORMLBL={liquid:'Liquid',pellet:'Pellets',crystal:'Crystals',powder:'Powder',granule:'Granules',ribbon:'Ribbon'};
+const GLASS={beaker:{n:'Beaker 250 mL',e:'🥛'},flask:{n:'Conical flask',e:'⚗️'},bunsen:{n:'Bunsen burner',e:'🔥'},
+ stirrer:{n:'Stirrer',e:'🌀'},therm:{n:'Thermometer',e:'🌡️'},pipette:{n:'Dropper pipette',e:'💉'}};
+const TABS=['Acids & Bases','Salts','Metals','Indicators','Glassware'];
+const isC=i=>i.kind==='beaker'||i.kind==='flask';
+const liquid=m=>Object.entries(m).reduce((a,[k,v])=>SOL.includes(k)?a:a+v,0);
+function derive(c){
+ const m=c.m,vol=liquid(m),net=((m.hcl||0)-(m.naoh||0))/Math.max(vol,1);
+ let pH=7;if(Math.abs(net)>1e-4)pH=net>0?Math.max(0,-Math.log10(net)):Math.min(14,14+Math.log10(-net));
+ const pink=(m.phph||0)>0&&pH>8.2,ppt=(m.cuso4||0)>0&&(m.naoh||0)>0&&pH>7;
+ const blue=Math.min(1,((m.cuso4||0)/Math.max(vol,1))*1.6);
+ const gas=((m.zn||0)+(m.mg||0))>0&&(m.hcl||0)>0&&net>0.001;
+ const color=pink?'rgba(236,72,153,.75)':ppt?'rgba(125,211,252,.6)':blue>0?`rgba(37,99,235,${.25+blue*.55})`:'rgba(186,230,253,.4)';
+ const mass=vol*1.02+(m.zn||0)+(m.mg||0);
+ return {vol,pH,pink,ppt,gas,color,mass,cuso4:m.cuso4||0,naoh:m.naoh||0};
+}
+const EXPS=[
+ {id:'titr',name:'Acid-Base Titration',e:'🧪',diff:'Medium',time:'20 min',safety:3,risk:false,eq:'HCl + NaOH → NaCl + H₂O',
+  desc:'Neutralise sodium hydroxide with hydrochloric acid, using phenolphthalein to see the endpoint.',
+  steps:[['Place a beaker on the bench',s=>s.cs.length>0],['Add 25 mL NaOH',s=>s.cs.some(c=>c.m.naoh>=25)],
+  ['Add phenolphthalein (solution turns pink)',s=>s.cs.some(c=>c.d.pink)],
+  ['Add HCl until the pink disappears (pH near 7)',s=>s.cs.some(c=>c.m.phph>0&&c.m.hcl>0&&!c.d.pink&&Math.abs(c.d.pH-7)<1)]]},
+ {id:'cryst',name:'Copper Sulfate Crystallization',e:'🔷',diff:'Easy',time:'30 min',safety:4,risk:false,eq:'CuSO₄(aq) → CuSO₄ crystals + H₂O (evaporation)',
+  desc:'Heat a copper sulfate solution to evaporate water and grow blue crystals.',
+  steps:[['Place a beaker and a Bunsen burner',s=>s.cs.length>0&&s.items.some(i=>i.kind==='bunsen')],['Add 50 mL copper sulfate',s=>s.cs.some(c=>c.m.cuso4>=50)],
+  ['Heat the beaker above 90 °C (select it, turn on burner)',s=>s.cs.some(c=>c.t>=90)],['Evaporate to under 25 mL',s=>s.cs.some(c=>c.d.cuso4>5&&c.d.vol<25)]]},
+ {id:'exo',name:'Exothermic Metal Reactions',e:'💥',diff:'Hard',time:'25 min',safety:2,risk:true,eq:'Mg + 2HCl → MgCl₂ + H₂↑',
+  desc:'React magnesium with acid and measure the heat released. Requires the safety check.',
+  steps:[['Place a beaker on the bench',s=>s.cs.length>0],['Add 25 mL HCl',s=>s.cs.some(c=>c.m.hcl>=25)],
+  ['Add a metal (Mg or Zn) and watch for bubbles',s=>s.cs.some(c=>c.d.gas)],['Reach above 30 °C',s=>s.cs.some(c=>c.t>30)]]}];
+const QUIZ=[['Acid splashes on your skin. What first?',['Rinse with running water for 15 minutes','Wipe with a dry cloth','Apply a strong base'],0],
+ ['How do you dilute concentrated acid?',['Add water to the acid','Add acid slowly to water','Heat the acid first'],1],
+ ['Which protective gear is required?',['Sunglasses','Open sandals','Goggles, gloves and lab coat'],2]];
+const NAV=[['bench','Lab Bench','🧪'],['dash','Dashboard','🏠'],['inv','Inventory','📦'],['safe','Safety Manual','🛡️'],['ach','Achievements','🏆']];
+const Logo=({s=36})=><svg width={s} height={s} viewBox="-2 -2 52 52" aria-label="Digital Researching Lab logo">
+ {[[-28,'#14b8a6'],[28,'#a78bfa']].map(([r,c])=><g key={r} transform={`rotate(${r} 24 24)`}>
+  <path d="M14 28H34L37 34a3 3 0 0 1-2.7 4.4H13.7A3 3 0 0 1 11 34Z" fill={c}/>
+  <path d="M20 6h8v10l9 18a3 3 0 0 1-2.7 4.4H13.7A3 3 0 0 1 11 34l9-18z" fill="rgba(255,255,255,.25)" stroke="#334155" strokeWidth="2" strokeLinejoin="round"/>
+  <circle cx="22" cy="32" r="1.6" fill="#fff"/><circle cx="27" cy="30" r="1.1" fill="#fff"/></g>)}</svg>;
+const Molecule=({className=''})=><svg viewBox="0 0 120 120" className={className+' pointer-events-none'} fill="none" stroke="#14b8a6" strokeWidth="1"><polygon points="60,18 96,39 96,81 60,102 24,81 24,39"/><polygon points="60,32 84,46 84,74 60,88 36,74 36,46" stroke="#a78bfa"/><path d="M96 39 118 26M24 81 6 92M60 18V4" stroke="#b8975a"/><circle cx="118" cy="26" r="5"/><circle cx="6" cy="92" r="5" stroke="#a78bfa"/><circle cx="60" cy="4" r="4"/><circle cx="60" cy="60" r="6" stroke="#b8975a"/></svg>;
+const Sprig=({className=''})=><svg viewBox="0 0 100 100" className={className+' pointer-events-none'} fill="none" strokeWidth="1" strokeLinecap="round"><path d="M50 98C48 70 52 40 62 8" stroke="#b8975a"/>{[[52,80,-1],[50,62,1],[54,46,-1],[58,30,1]].map(([x,y,d],i)=><path key={i} d={`M${x} ${y}c${d*8} -14 ${d*24} -16 ${d*30} -14c${d*-4} 14 ${d*-16} 22 ${-d*30} 14z`} stroke={i%2?'#14b8a6':'#b8975a'}/>)}</svg>;
+const Curve=({className=''})=><svg viewBox="0 0 240 12" className={'h-3 w-60 '+className} fill="none" stroke="#b8975a" strokeWidth="1"><path d="M0 6C30 0 50 12 80 6S130 0 160 6 210 12 240 6"/></svg>;
+const Icon3D=({k,className})=>{const g='g'+k;const u=c=>`url(#${g}${c})`;
+ return <svg viewBox="0 0 64 64" className={className}><defs>{[['a','#99f6e4','#0f766e'],['b','#ddd6fe','#7c3aed'],['c','#fde68a','#b8975a']].map(([i,a,b])=><linearGradient key={i} id={g+i} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={a}/><stop offset="1" stopColor={b}/></linearGradient>)}</defs>
+ {k==='titr'&&<g transform="rotate(20 32 32)"><rect x="24" y="6" width="16" height="52" rx="8" fill="#fff" fillOpacity=".7" stroke="#94a3b8"/><rect x="26" y="28" width="12" height="28" rx="6" fill={u('a')}/><ellipse cx="29" cy="20" rx="2" ry="8" fill="#fff"/></g>}
+ {k==='cryst'&&<g><path d="M26 6h12v14l14 28a5 5 0 0 1-4.4 7H16.4A5 5 0 0 1 12 48l14-28z" fill="#fff" fillOpacity=".7" stroke="#94a3b8"/><path d="M20 38h24l8 12a5 5 0 0 1-4.4 5H16.4A5 5 0 0 1 12 50z" fill={u('b')}/><ellipse cx="29" cy="14" rx="2" ry="5" fill="#fff"/></g>}
+ {k==='exo'&&<g fill="none" strokeWidth="3" strokeLinecap="round"><path d="M20 6C44 18 20 30 44 42S20 54 44 58" stroke={u('a')}/><path d="M44 6C20 18 44 30 20 42S44 54 20 58" stroke={u('b')}/>{[14,24,34,46].map(y=><path key={y} d={`M24 ${y}H40`} stroke={u('c')} strokeWidth="2"/>)}</g>}</svg>};
+const Card=({className='',...p})=><div className={'wc rounded-3xl border border-[#e4d8bd] '+className} {...p}/>;
+
+function Pour({pr}){const c=CHEMS[pr.ch],f=c.f,col=c.pc;
+ return <div className="pointer-events-none absolute inset-x-0 -top-24 z-20 h-28">
+  <div className="absolute -left-10 top-0 flex flex-col items-center" style={{opacity:0,animation:'tilt 1.5s ease-in-out forwards'}}><div className="h-3 w-3 rounded-t bg-stone-400"/><div className="h-12 w-9 rounded-lg border border-stone-400" style={{background:`linear-gradient(transparent 22%,${col} 22%)`}}/></div>
+  {f==='liquid'?<div className="absolute left-1/2 top-4 rounded-b" style={{width:pr.drop?3:6,height:'100%',marginLeft:-3,background:col,border:'1px solid rgba(100,116,139,.35)',transformOrigin:'top',opacity:0,animation:`stream ${pr.drop?.9:1.1}s .25s ease-in forwards`}}/>
+  :Array.from({length:f==='ribbon'?5:12}).map((_,i)=><span key={i} className="absolute top-4" style={{left:`${42+(i%5)*4}%`,width:f==='ribbon'?2:f==='powder'?3:6,height:f==='ribbon'?14:f==='powder'?3:6,background:col,border:'1px solid rgba(100,116,139,.45)',borderRadius:f==='pellet'||f==='granule'?'50%':1,opacity:0,animation:`pf .7s ${.3+i*.06}s ease-in forwards`}}/>)}</div>}
+function Chat({ctx}){
+ const [open,setOpen]=useState(false),[msgs,setMsgs]=useState([]),[txt,setTxt]=useState(''),[busy,setBusy]=useState(false),end=useRef();
+ useEffect(()=>{end.current&&end.current.scrollIntoView({block:'nearest'})},[msgs,open,busy]);
+ const ask=async(q0)=>{const q=(q0||txt).trim();if(!q||busy)return;setTxt('');const h=[...msgs,{r:'u',t:q}];setMsgs(h);setBusy(true);let a;
+  try{const S=await claude.use('sample');if(!S)throw 0;
+   const sys=`You are the friendly lab assistant inside "Digital Researching Lab", a virtual chemistry lab website. Help with experiments, reactions, safety and how to use the site (shelf on the left, bench in the middle, guide and meters on the right; drag or tap chemicals onto beakers; dropper mode; Bunsen burner with flame slider; chat). Be accurate and concise (max 120 words) and encourage safe lab practice. Reply in ${LANG==='km'?'Khmer':'English'}. Current bench: ${ctx()}`;
+   a=(await S([{role:'user',content:sys+'\n\nConversation:\n'+h.map(m=>(m.r==='u'?'Student: ':'Assistant: ')+m.t).join('\n')+'\nAssistant:'}])).text}
+  catch(e){const f=KB.find(k=>k[0].test(q.toLowerCase()));a=f?(LANG==='km'?f[2]:f[1]):KBD[LANG==='km'?1:0]}
+  setMsgs([...h,{r:'b',t:a}]);setBusy(false)};
+ return <div className="fixed right-4 z-40" style={{bottom:'calc(1rem + env(safe-area-inset-bottom,0px))'}}>
+  {open&&<div className="wc mb-3 flex h-[26rem] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-[#e4d8bd]">
+   <div className="serif border-b border-[#e4d8bd] px-4 py-3 text-lg text-stone-800">{T('Ask the Lab Assistant')}</div>
+   <div className="flex-1 space-y-2 overflow-auto p-3 text-sm">
+    <div className="rounded-2xl bg-white/80 p-3 text-stone-600">Hi! I can explain reactions, safety, or what is happening on your bench.</div>
+    {!msgs.length&&['Why did my solution turn pink?','How do I dilute acid safely?','What is happening in my beaker?'].map(c=><button key={c} onClick={()=>ask(c)} className="block w-full rounded-xl border border-[#e4d8bd] px-3 py-2 text-left text-teal-700 hover:bg-teal-50">{c}</button>)}
+    {msgs.map((m,i)=><div key={i} className={'max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 '+(m.r==='u'?'ml-auto bg-teal-700 text-white':'bg-white/90 text-stone-700')}>{m.t}</div>)}
+    {busy&&<div className="text-stone-500">Thinking…</div>}<div ref={end}/></div>
+   <div className="flex gap-2 border-t border-[#e4d8bd] p-2"><input value={txt} onChange={e=>setTxt(e.target.value)} onKeyDown={e=>e.key==='Enter'&&ask()} placeholder={T('Ask about any reaction or experiment…')} className="min-w-0 flex-1 rounded-xl border border-[#e4d8bd] bg-white px-3 py-2 text-sm outline-none focus:border-teal-500"/>
+    <button onClick={()=>ask()} className="rounded-xl bg-teal-700 px-3 text-sm font-semibold text-white">Send</button></div></div>}
+  <button onClick={()=>setOpen(!open)} aria-label="Lab Assistant" className="ml-auto flex items-center gap-2 rounded-full border border-[#e4d8bd] bg-teal-700 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:bg-teal-600"><span>💬</span><span className="hidden sm:inline">Ask the Lab Assistant</span></button></div>;
+}
+function Glass({it,d,sel,stir,pr,onSel,onPour,onDel}){
+ const [over,setOver]=useState(false);
+ const pct=Math.min(100,d.vol/250*100),fl=it.kind==='flask';
+ return <div className="flex flex-col items-center w-32">
+  <div onClick={()=>onSel(it.id)} onDragOver={e=>{e.preventDefault();setOver(true)}} onDragLeave={()=>setOver(false)}
+   onDrop={e=>{e.preventDefault();e.stopPropagation();setOver(false);try{const x=JSON.parse(e.dataTransfer.getData('text/plain'));if(x.k==='chem')onPour(it.id,x.id)}catch(_){}}}
+   className={'relative cursor-pointer h-44 w-28 overflow-visible transition '+(over?'scale-105 ':'')}>
+   {pr&&<Pour key={pr.k} pr={pr}/>}
+   {it.t>70&&[0,1,2].map(i=><span key={i} className="vap" style={{left:10+i*28,animationDelay:i*.7+'s'}}/>)}
+   <div className={'absolute inset-0 overflow-hidden border-2 border-t-0 bg-white/60 '+(fl?'rounded-b-[50%] ':'rounded-b-2xl ')+(sel?'border-teal-400 shadow-[0_0_24px_#14b8a666]':over?'border-emerald-400':'border-stone-400')}>
+    <div className="absolute bottom-0 w-full transition-all duration-700" style={{height:pct+'%',background:d.color}}>
+     {d.gas&&[0,1,2,3,4,5,6,7].map(i=><span key={i} className="bub" style={{left:8+i*11+'%',animationDelay:i*.22+'s'}}/>)}
+     {d.ppt&&[0,1,2,3,4,5].map(i=><span key={i} className="absolute bottom-1 w-3 h-2 rounded-full bg-teal-200/80" style={{left:12+i*14+'%'}}/>)}
+     {d.cuso4>5&&d.vol<25&&[0,1,2,3,4].map(i=><span key={i} className="absolute bottom-1 text-teal-600 text-sm" style={{left:8+i*18+'%'}}>◆</span>)}
+    </div>
+    {((it.m.zn||0)+(it.m.mg||0))>0&&<div className="absolute bottom-1 left-0 flex w-full justify-center gap-1">{Array.from({length:Math.min(5,Math.ceil(((it.m.zn||0)+(it.m.mg||0))/5))}).map((_,i)=><span key={i} style={{width:it.m.mg?3:7,height:it.m.mg?16:6,background:it.m.mg?'#e2e8f0':'#94a3b8',border:'1px solid #64748b',borderRadius:it.m.mg?2:'50%',transform:`rotate(${i*30-50}deg)`}}/>)}</div>}
+    {stir&&d.vol>0&&<div className="absolute left-1/2 top-2 h-32 w-1 origin-top rounded bg-stone-500" style={{animation:'rod .5s infinite'}}/>}
+   </div>
+   <button onClick={e=>{e.stopPropagation();onDel(it.id)}} className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-stone-200 text-xs hover:bg-rose-600" aria-label="Remove">×</button>
+  </div>
+  <div className="mt-2 text-center text-xs text-stone-600">{fl?'Flask':'Beaker'} · {Math.round(d.vol)} mL · {it.t.toFixed(0)}°C
+   <div className={'mt-1 inline-block rounded px-1.5 '+(d.pH<6?'bg-amber-500/20 text-amber-700':d.pH>8?'bg-violet-500/20 text-violet-700':'bg-emerald-500/20 text-emerald-700')}>pH {d.pH.toFixed(1)}</div></div></div>;
+}
+
+function Quiz({onDone,onClose}){
+ const [i,setI]=useState(0),[sc,setSc]=useState(0),[res,setRes]=useState(null);
+ const pick=k=>{const s=sc+(k===QUIZ[i][2]?1:0);if(i<2){setSc(s);setI(i+1)}else{setSc(s);setRes(s>=2)}};
+ return <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/40 p-4"><Card className="w-full max-w-md p-6">
+  {res===null?<><div className="text-sm text-stone-500">Safety check · question {i+1} of 3</div>
+   <h3 className="mt-2 text-lg font-semibold">{QUIZ[i][0]}</h3>
+   <div className="mt-4 grid gap-2">{QUIZ[i][1].map((o,k)=><button key={k} onClick={()=>pick(k)} className="rounded-xl border border-stone-300 px-4 py-3 text-left hover:border-teal-400 hover:bg-teal-600/10">{o}</button>)}</div></>
+  :<div className="text-center"><div className="text-4xl">{res?'✅':'⚠️'}</div><h3 className="mt-2 text-lg font-semibold">{res?'Safety check passed':'Not quite — review the safety manual'}</h3>
+   <p className="mt-1 text-sm text-stone-500">You scored {sc} of 3. You need at least 2 to enter high-risk experiments.</p>
+   <button onClick={()=>res?onDone():onClose()} className="mt-4 rounded-xl bg-teal-700 px-5 py-2 font-semibold text-white">{res?'Enter the lab':'Close'}</button></div>}
+ </Card></div>;
+}
+function Summary({ex,secs,onClose}){
+ return <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/40 p-4">
+  {Array.from({length:40}).map((_,i)=><span key={i} className="conf" style={{left:(i*2.5)+'%',background:['#2dd4bf','#a78bfa','#d4af37','#5eead4'][i%4],animationDelay:(i%8)*.15+'s'}}/>)}
+  <Card className="w-full max-w-md p-6 text-center"><div className="text-4xl">🎉</div>
+   <h3 className="mt-2 text-xl font-extrabold text-emerald-600">Experiment complete</h3><p className="text-stone-600">{ex.name}</p>
+   <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm"><div className="text-stone-500">Chemical equation</div><div className="mt-1 text-lg font-semibold text-teal-700">{ex.eq}</div></div>
+   <div className="mt-3 grid grid-cols-2 gap-2 text-sm"><div className="rounded-xl bg-stone-50 p-3">Steps<div className="text-xl font-bold">{ex.steps.length}/{ex.steps.length}</div></div><div className="rounded-xl bg-stone-50 p-3">Time<div className="text-xl font-bold">{Math.floor(secs/60)}m {secs%60}s</div></div></div>
+   <button onClick={onClose} className="mt-5 rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white">Back to dashboard</button></Card></div>;
+}
+
+function Dashboard({completed,onStart,onResume,hasLast}){
+ return <div className="mx-auto max-w-5xl p-6">
+  <Card className="relative overflow-hidden p-8"><Molecule className="absolute -right-4 -top-4 h-48 w-48 opacity-60"/><Sprig className="absolute -bottom-3 right-28 h-24 w-24 opacity-70"/><h1 className="relative text-4xl text-stone-800">Good to see you, Alex</h1>
+   <p className="relative mt-1 text-stone-500">Your bench is clean and the fume hood is on.</p>
+   <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
+    <div className="rounded-xl bg-stone-50/70 p-4"><div className="text-sm text-stone-500">Experiments completed</div><div className="text-3xl font-bold text-teal-600">{completed}</div></div>
+    <div className="rounded-xl bg-stone-50/70 p-4"><div className="text-sm text-stone-500">Safety score</div><div className="text-3xl font-bold text-emerald-600">94%</div></div>
+    <button onClick={onResume} className="rounded-xl border border-teal-500/50 bg-teal-500/10 p-4 text-left hover:bg-teal-500/20"><div className="text-sm text-stone-500">Resume last experiment</div><div className="font-semibold">{hasLast||'Open an empty bench'}</div></button></div></Card>
+  <h2 className="mt-10 text-3xl text-stone-800">Experiment catalog</h2><Curve className="mb-4 mt-1"/>
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{EXPS.map(x=><Card key={x.id} className="p-5 flex flex-col">
+   <Icon3D k={x.id} className="h-14 w-14"/><h3 className="mt-2 font-semibold">{x.name}</h3><p className="mt-1 flex-1 text-sm text-stone-500">{x.desc}</p>
+   <div className="mt-3 flex flex-wrap gap-2 text-xs"><span className={'rounded-full px-2 py-1 '+(x.diff==='Easy'?'bg-emerald-500/20 text-emerald-700':x.diff==='Medium'?'bg-teal-500/20 text-teal-700':'bg-amber-500/20 text-amber-700')}>{x.diff}</span>
+    <span className="rounded-full bg-stone-100 px-2 py-1">⏱ {x.time}</span><span className="rounded-full bg-stone-100 px-2 py-1">🛡️ {'●'.repeat(x.safety)+'○'.repeat(5-x.safety)}</span></div>
+   <button onClick={()=>onStart(x)} className="mt-4 rounded-xl bg-teal-700 py-2 font-semibold text-white hover:bg-teal-600">{x.risk?'Safety check & start':'Start experiment'}</button></Card>)}</div></div>;
+}
+
+function Bench({items,setItems,sel,setSel,ex,latch,alerts,warn,mode,setMode,hist,stir,setStir,toast,setToast}){
+ const [tab,setTab]=useState(TABS[0]),[q,setQ]=useState(''),[pours,setPours]=useState({});
+ const addItem=k=>{const it={id:uid(),kind:k,m:{},t:22,on:false,flame:5};setItems(p=>[...p,it]);if(isC(it))setSel(it.id)};
+ const pour=(id,ch)=>{
+  const it=items.find(i=>i.id===id);if(!it)return;
+  const sol=SOL.includes(ch),amt=sol?(mode==='drop'?1:5):(mode==='drop'?2:25),m={...it.m};let dT=0;
+  if(!sol&&liquid(m)+amt>250){warn('warn','Overflow! A container holds 250 mL maximum.');return}
+  if(ch==='water'&&(m.hcl||0)>0){warn('danger','Never add water to concentrated acid. Add acid to water slowly to avoid splashing.');dT+=6}
+  if(ch==='hcl'&&(m.naoh||0)>0){dT+=Math.min(amt,m.naoh)*.4;warn('info','Neutralisation is exothermic: HCl + NaOH → NaCl + H₂O.')}
+  if(ch==='naoh'&&(m.hcl||0)>0)dT+=Math.min(amt,m.hcl)*.4;
+  if(sol&&(m.hcl||0)>0){dT+=ch==='mg'?16:10;warn('warn','Hydrogen gas released. Keep flames away.');if(items.some(i=>i.kind==='bunsen'&&i.on))warn('danger','Open flame near hydrogen is an explosion risk. Turn the burner off.')}
+  if(ch==='cuso4'&&(m.naoh||0)>0)warn('info','Blue precipitate of Cu(OH)₂ is forming.');
+  m[ch]=(m[ch]||0)+amt;
+  const k=uid();setPours(p=>({...p,[id]:{ch,k,drop:mode==='drop'}}));setSel(id);
+  setTimeout(()=>setItems(p=>p.map(i=>i.id===id?{...i,m:{...i.m,[ch]:(i.m[ch]||0)+amt},t:Math.min(100,i.t+dT)}:i)),650);
+  setTimeout(()=>setPours(p=>p[id]&&p[id].k===k?{...p,[id]:null}:p),1500);
+ };
+ const tapShelf=(k,id)=>{
+  if(k==='glass'){if(id==='pipette'){setMode('drop');setToast('Dropper mode on: 2 mL per drop');return}addItem(id);return}
+  const c=items.find(i=>i.id===sel&&isC(i))||items.find(isC);
+  c?pour(c.id,id):setToast('Place a beaker or flask first');
+ };
+ const list=useMemo(()=>{const all=[...Object.entries(CHEMS).map(([id,v])=>({id,k:'chem',...v})),...Object.entries(GLASS).map(([id,v])=>({id,k:'glass',cat:'Glassware',...v}))];
+  return all.filter(x=>q?x.n.toLowerCase().includes(q.toLowerCase()):x.cat===tab)},[tab,q]);
+ const cs=items.filter(isC),cur=cs.find(c=>c.id===sel)||cs[0],cd=cur&&derive(cur),bun=items.find(i=>i.kind==='bunsen');
+ const done=latch.filter(Boolean).length;
+ const pts=hist.map((v,i)=>`${i*(160/39)},${50-(v-15)*0.5}`).join(' ');
+ return <div className="grid h-full grid-cols-1 gap-3 p-3 lg:grid-cols-[250px_1fr_300px] overflow-auto">
+  <Card className="flex flex-col p-3 min-h-0">
+   <input value={q} onChange={e=>setQ(e.target.value)} placeholder={T('Search chemicals and tools')} className="w-full rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-teal-400"/>
+   <div className="mt-2 flex flex-wrap gap-1">{TABS.map(t=><button key={t} onClick={()=>{setTab(t);setQ('')}} className={'rounded-full px-2.5 py-1 text-xs '+(tab===t&&!q?'bg-teal-700 text-white':'bg-stone-100 hover:bg-stone-200')}>{t}</button>)}</div>
+   <div className="mt-3 grid grid-cols-2 gap-2 overflow-auto">{list.map(x=><div key={x.id} draggable onDragStart={e=>e.dataTransfer.setData('text/plain',JSON.stringify({k:x.k,id:x.id}))}
+     onClick={()=>tapShelf(x.k,x.id)} className="cursor-grab rounded-xl border border-stone-300 bg-stone-50 p-3 text-center text-xs hover:border-teal-400 active:cursor-grabbing"><div className="text-2xl">{x.e}</div>{x.n}{x.f&&<div className="mt-1 text-[10px] text-teal-700">{FORMLBL[x.f]}</div>}</div>)}
+    {!list.length&&<p className="col-span-2 text-sm text-stone-500">Nothing matches that search.</p>}</div>
+   <p className="mt-auto pt-3 text-xs text-stone-500">Drag items onto the bench, or tap to add. Tap a chemical to pour into the selected container.</p></Card>
+
+  <div className="flex min-h-[420px] flex-col gap-3">
+   <Card className="flex flex-wrap items-center gap-3 p-3 text-sm">
+    <span className="font-semibold">Tools</span>
+    <div className="flex rounded-lg bg-stone-50 p-1">{[['pour','Pour 25 mL'],['drop','Dropper 2 mL']].map(([k,l])=><button key={k} onClick={()=>setMode(k)} className={'rounded-md px-3 py-1 '+(mode===k?'bg-teal-700 text-white':'')}>{l}</button>)}</div>
+    <label className="flex items-center gap-2"><input type="checkbox" checked={stir} onChange={e=>setStir(e.target.checked)}/>Stirrer</label>
+    {bun&&<><label className="flex items-center gap-2"><input type="checkbox" checked={bun.on} onChange={e=>setItems(p=>p.map(i=>i.id===bun.id?{...i,on:e.target.checked}:i))}/>Burner</label>
+     <label className="flex items-center gap-2">Flame<input type="range" min="1" max="10" value={bun.flame} onChange={e=>setItems(p=>p.map(i=>i.id===bun.id?{...i,flame:+e.target.value}:i))}/></label></>}
+    <button onClick={()=>{setItems([]);setSel(null)}} className="ml-auto rounded-lg bg-stone-100 px-3 py-1 hover:bg-rose-600">Clear bench</button></Card>
+   <div className="bench relative flex flex-1 flex-wrap items-end justify-center gap-6 overflow-auto rounded-2xl border border-stone-300 p-6 pb-10"
+    onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();try{const x=JSON.parse(e.dataTransfer.getData('text/plain'));x.k==='glass'?tapShelf('glass',x.id):setToast('Drop chemicals onto a beaker or flask')}catch(_){}}}>
+    {!items.length&&<div className="m-auto text-center text-stone-500"><Molecule className="mx-auto h-20 w-20 opacity-70"/>Drag a beaker from the Glassware tab to start.</div>}
+    {items.map(it=>isC(it)?<Glass key={it.id} it={it} d={derive(it)} sel={it.id===sel} stir={stir} pr={pours[it.id]} onSel={setSel} onPour={pour} onDel={id=>setItems(p=>p.filter(i=>i.id!==id))}/>
+     :<div key={it.id} className="relative flex w-24 flex-col items-center text-xs text-stone-600">
+      {it.kind==='bunsen'&&<>{it.on&&<div className="h-12 w-6 rounded-full bg-gradient-to-t from-blue-500 via-amber-400 to-transparent origin-bottom" style={{transform:`scaleY(${.4+it.flame*.1})`,animation:'flame .3s infinite'}}/>}<div className="h-14 w-10 rounded-t bg-stone-500"/><div className="h-3 w-20 rounded bg-stone-600"/>Bunsen {it.on?'on':'off'}</>}
+      {it.kind==='stirrer'&&<><div className="text-4xl">🌀</div>Stirrer<button className="mt-1 rounded bg-stone-100 px-2 py-0.5" onClick={()=>setStir(!stir)}>{stir?'Stop':'Start'}</button></>}
+      {it.kind==='therm'&&<><div className="text-4xl">🌡️</div><b className="text-lg text-amber-700">{cur?cur.t.toFixed(1):'--'}°C</b></>}
+      <button onClick={()=>setItems(p=>p.filter(i=>i.id!==it.id))} className="absolute -top-2 right-1 h-5 w-5 rounded-full bg-stone-200 hover:bg-rose-600">×</button></div>)}
+    {toast&&<div className="absolute left-1/2 top-3 -transtone-x-1/2 rounded-full bg-stone-100 px-4 py-1.5 text-sm shadow">{toast}</div>}</div></div>
+
+  <div className="flex flex-col gap-3 overflow-auto">
+   <Card className="p-4"><div className="flex justify-between text-sm"><b>{ex?ex.name:'Free play'}</b>{ex&&<span className="text-emerald-600">{done}/{ex.steps.length}</span>}</div>
+    {ex?<><div className="mt-2 h-1.5 rounded bg-stone-100"><div className="h-full rounded bg-emerald-400 transition-all" style={{width:done/ex.steps.length*100+'%'}}/></div>
+     <ul className="mt-3 space-y-2 text-sm">{ex.steps.map((s,i)=><li key={i} className={'flex gap-2 '+(latch[i]?'text-emerald-700':'text-stone-600')}><span>{latch[i]?'✔':'○'}</span>{s[0]}</li>)}</ul></>
+     :<p className="mt-2 text-sm text-stone-500">Start an experiment from the dashboard for a guided checklist.</p>}</Card>
+   <Card className="p-4 text-sm"><b>Live data</b>{cd?<div className="mt-2 space-y-3">
+    <div><div className="flex justify-between"><span>Temperature</span><b className="text-amber-700">{cur.t.toFixed(1)} °C</b></div><div className="h-2 rounded bg-stone-100"><div className="h-full rounded bg-amber-400 transition-all" style={{width:cur.t+'%'}}/></div></div>
+    <div><div className="flex justify-between"><span>pH</span><b className="text-teal-700">{cd.pH.toFixed(2)}</b></div><div className="relative h-2 rounded" style={{background:'linear-gradient(90deg,#ef4444,#facc15,#22c55e,#3b82f6,#8b5cf6)'}}><span className="absolute -top-1 h-4 w-1 rounded bg-white transition-all" style={{left:cd.pH/14*100+'%'}}/></div></div>
+    <div className="flex justify-between"><span>Mass</span><b className="text-emerald-700">{cd.mass.toFixed(1)} g</b></div>
+    <svg viewBox="0 0 160 50" className="w-full rounded bg-stone-50"><polyline fill="none" stroke="#b8975a" strokeWidth="1.5" points={pts}/></svg></div>
+    :<p className="mt-2 text-stone-500">Add a container to see meters.</p>}</Card>
+   <Card className="!border-amber-400/60 p-4 text-sm"><b className="text-amber-600">⚠ Safety alerts</b>
+    <div className="mt-2 space-y-2">{alerts.length?alerts.map(a=><div key={a.k} className={'rounded-lg p-2 '+(a.l==='danger'?'bg-rose-500/20 text-rose-800':a.l==='warn'?'bg-amber-500/15 text-amber-800':'bg-teal-500/15 text-teal-800')}>{a.msg}</div>):<div className="text-emerald-600">All clear. Goggles on.</div>}</div></Card></div></div>;
+}
+
+function Simple({view,completed,onQuiz}){
+ if(view==='inv')return <div className="mx-auto max-w-4xl p-6"><h1 className="mb-4 text-2xl font-bold">Inventory</h1><div className="grid gap-3 sm:grid-cols-2">{Object.values(CHEMS).map((c,i)=><Card key={i} className="p-4"><div className="flex justify-between"><span>{c.e} {c.n}</span><span className="text-stone-500">{c.cat}</span></div><div className="mt-2 h-1.5 rounded bg-stone-100"><div className="h-full rounded bg-teal-400" style={{width:(95-i*9)+'%'}}/></div></Card>)}</div></div>;
+ if(view==='safe')return <div className="mx-auto max-w-2xl p-6"><h1 className="mb-4 text-2xl font-bold">Safety manual</h1><Card className="space-y-2 p-5 text-stone-600">{['Wear goggles, gloves and a lab coat at all times.','Add acid to water, never water to acid.','Keep flames away from hydrogen-producing reactions.','Rinse skin splashes with running water for 15 minutes.','Never taste or sniff chemicals directly.'].map(t=><div key={t}>✔ {t}</div>)}<button onClick={onQuiz} className="mt-3 rounded-xl bg-teal-700 px-4 py-2 font-semibold text-white">Take the safety check</button></Card></div>;
+ const B=[['First reaction','Complete any experiment',completed>0],['Steady hands','Complete 2 experiments',completed>1],['Lab master','Complete all 3 experiments',completed>2],['Safety first','Pass the safety check',false]];
+ return <div className="mx-auto max-w-3xl p-6"><h1 className="mb-4 text-2xl font-bold">Achievements</h1><div className="grid gap-3 sm:grid-cols-2">{B.map(b=><Card key={b[0]} className={'p-4 '+(b[2]?'!border-emerald-500/60':'opacity-60')}><div className="text-2xl">{b[2]?'🏆':'🔒'}</div><b>{b[0]}</b><div className="text-sm text-stone-500">{b[1]}</div></Card>)}</div></div>;
+}
+
+function App(){
+ const [lang,setLang]=useState('en'),[view,setView]=useState('bench'),[items,setItems]=useState([]),[sel,setSel]=useState(null),[expId,setExpId]=useState(null);
+ const [latch,setLatch]=useState([]),[alerts,setAlerts]=useState([]),[mode,setMode]=useState('pour'),[stir,setStir]=useState(false);
+ const [hist,setHist]=useState(Array(40).fill(22)),[toast,setToast]=useState(''),[modal,setModal]=useState(null);
+ const [passed,setPassed]=useState(false),[completed,setCompleted]=useState(0),[fin,setFin]=useState(false),[pending,setPending]=useState(null);
+ const t0=useRef(Date.now()),selR=useRef(),itemsR=useRef();selR.current=sel;itemsR.current=items;
+ LANG=lang;
+ const ex=EXPS.find(e=>e.id===expId);
+ useEffect(()=>{document.body.classList.toggle('km',lang==='km');document.documentElement.lang=lang==='km'?'km':'en';applyLang()},[lang]);
+ useEffect(()=>{let r;const mo=new MutationObserver(()=>{cancelAnimationFrame(r);r=requestAnimationFrame(applyLang)});mo.observe(document.getElementById('root'),{subtree:true,childList:true,characterData:true});return()=>mo.disconnect()},[]);
+ const warn=(l,msg)=>setAlerts(a=>[{l,msg,k:uid()},...a].slice(0,4));
+ useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),2200);return()=>clearTimeout(t)},[toast]);
+ useEffect(()=>{const t=setInterval(()=>{setItems(p=>{const b=p.find(i=>i.kind==='bunsen'&&i.on);
+  return p.map(i=>{if(!isC(i))return i;let t=i.t+(22-i.t)*.04,m=i.m;const hot=b&&i.id===selR.current;
+   if(hot)t+=b.flame*.6;t=Math.min(100,t);
+   if(hot&&t>=90&&liquid(m)>0)m=Object.fromEntries(Object.entries(m).map(([k,v])=>[k,SOL.includes(k)?v:v*.99]));
+   return {...i,t,m}})})},500);
+  const h=setInterval(()=>{const c=itemsR.current.find(i=>i.id===selR.current&&isC(i));setHist(x=>[...x.slice(1),c?c.t:22])},1000);
+  return()=>{clearInterval(t);clearInterval(h)}},[]);
+ const cs=items.filter(isC).map(c=>({...c,d:derive(c)}));
+ const prog=ex?ex.steps.map(s=>s[1]({cs,items})):[];
+ useEffect(()=>{if(!ex)return;setLatch(l=>{const n=ex.steps.map((_,i)=>!!(l[i]||prog[i]));return n.every((v,i)=>v===!!l[i])?l:n})},[prog.join()]);
+ useEffect(()=>{if(ex&&!fin&&latch.length&&latch.every(Boolean)){setFin(true);setCompleted(c=>c+1);setModal('summary')}},[latch]);
+ const go=x=>{setExpId(x.id);setLatch([]);setFin(false);setAlerts([]);setItems([]);setSel(null);t0.current=Date.now();setView('bench')};
+ const start=x=>{if(x.risk&&!passed){setPending(x);setModal('quiz')}else go(x)};
+ const ctx=()=>(ex?'Experiment: '+ex.name+'. ':'Free play. ')+(cs.length?cs.map(c=>`${c.kind} with ${Object.entries(c.m).map(([k,v])=>CHEMS[k].n+' '+Math.round(v)).join(', ')||'nothing'}; ${c.t.toFixed(0)}°C; pH ${c.d.pH.toFixed(1)}`).join(' | '):'bench is empty');
+ return <div className="flex h-full">
+  <nav className="flex w-16 shrink-0 flex-col gap-1 border-r border-[#e4d8bd] bg-white/70 p-2 backdrop-blur lg:w-60">
+   <div className="mb-3 flex items-center gap-2 p-1"><Logo/><span className="serif hidden text-xl leading-tight text-stone-800 lg:inline">Digital Researching Lab</span></div>
+   {NAV.map(([k,l,e])=><button key={k} onClick={()=>setView(k)} title={l} className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm '+(view===k?'bg-teal-500/20 text-teal-700':'text-stone-500 hover:bg-stone-100')}><span>{e}</span><span className="hidden lg:inline">{l}</span></button>)}<Sprig className="mt-auto hidden h-24 w-24 self-center opacity-70 lg:block"/>
+   <button onClick={()=>setLang(lang==='en'?'km':'en')} aria-label="Switch language" title="English / ខ្មែរ" className="flex items-center gap-2 rounded-xl border border-[#e4d8bd] px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-100 max-lg:mt-auto lg:mt-2"><span>🌐</span><span className="hidden lg:inline">{lang==='en'?'ភាសាខ្មែរ':'English'}</span><span className="text-xs lg:hidden">{lang==='en'?'ខ្មែរ':'EN'}</span></button></nav>
+  <main className="min-w-0 flex-1 overflow-auto">
+   {view==='dash'&&<Dashboard completed={completed} onStart={start} onResume={()=>setView('bench')} hasLast={ex&&ex.name}/>}
+   {view==='bench'&&<Bench {...{items,setItems,sel,setSel,ex,latch,alerts,warn,mode,setMode,hist,stir,setStir,toast,setToast}}/>}
+   {['inv','safe','ach'].includes(view)&&<Simple view={view} completed={completed} onQuiz={()=>{setPending(null);setModal('quiz')}}/>}</main>
+  <Chat ctx={ctx}/>
+  {modal==='quiz'&&<Quiz onClose={()=>setModal(null)} onDone={()=>{setPassed(true);setModal(null);if(pending)go(pending)}}/>}
+  {modal==='summary'&&ex&&<Summary ex={ex} secs={Math.round((Date.now()-t0.current)/1000)} onClose={()=>{setModal(null);setView('dash')}}/>}</div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>
