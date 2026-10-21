@@ -4,17 +4,17 @@ import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/chem';
 import { useT } from '@/lib/i18n';
 import { LabProvider, useLab } from '@/lib/lab';
-import { Logo, Sprig } from './ui';
+import { Icon, Logo } from './ui';
 import Chat from './Chat';
 import Modals from './Modals';
 
 function Nav(){
  const {lang,setLang}=useLab();
  const T=useT(),path=usePathname();
- return <nav className="flex w-16 shrink-0 flex-col gap-1 border-r border-[#e4d8bd] bg-white/70 p-2 backdrop-blur lg:w-60">
-  <div className="mb-3 flex items-center gap-2 p-1"><Logo/><span className="serif hidden text-xl leading-tight text-stone-800 lg:inline">{T('Digital Researching Lab')}</span></div>
-  {NAV.map(([href,l,e])=><Link key={href} href={href} title={T(l)} className={'flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm '+(path===href?'bg-teal-500/20 text-teal-700':'text-stone-500 hover:bg-stone-100')}><span>{e}</span><span className="hidden lg:inline">{T(l)}</span></Link>)}<Sprig className="mt-auto hidden h-24 w-24 self-center opacity-70 lg:block"/>
-  <button onClick={()=>setLang(lang==='en'?'km':'en')} aria-label="Switch language" title="English / ខ្មែរ" className="flex items-center gap-2 rounded-xl border border-[#e4d8bd] px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-100 max-lg:mt-auto lg:mt-2"><span>🌐</span><span className="hidden lg:inline">{lang==='en'?'ភាសាខ្មែរ':'English'}</span><span className="text-xs lg:hidden">{lang==='en'?'ខ្មែរ':'EN'}</span></button></nav>;
+ return <nav className="flex w-14 shrink-0 flex-col gap-0.5 border-r border-line bg-sand p-2 text-stone-600 lg:w-56">
+  <div className="mb-4 flex items-center gap-2.5 px-1 py-1.5"><Logo s={30}/><div className="hidden leading-tight lg:block"><div className="text-sm font-semibold text-stone-900">{T('Digital Researching Lab')}</div><div className="text-[11px] text-stone-500">{T('Virtual chemistry lab')}</div></div></div>
+  {NAV.map(([href,l,ic])=><Link key={href} href={href} title={T(l)} className={'flex items-center gap-3 rounded-md px-2.5 py-2 text-sm '+(path===href?'bg-brand-700/10 font-medium text-brand-800 shadow-[inset_3px_0_0_#b8975a]':'hover:bg-stone-900/5 hover:text-stone-900')}><Icon n={ic} className="h-[18px] w-[18px] shrink-0"/><span className="hidden lg:inline">{T(l)}</span></Link>)}
+  <button onClick={()=>setLang(lang==='en'?'km':'en')} aria-label="Switch language" title="English / ខ្មែរ" className="mt-auto flex items-center gap-3 rounded-md border border-line bg-paper px-2.5 py-2 text-sm hover:text-stone-900"><Icon n="globe" className="h-[18px] w-[18px] shrink-0"/><span className="hidden lg:inline">{lang==='en'?'ភាសាខ្មែរ':'English'}</span></button></nav>;
 }
 
 export default function LabShell({children}){

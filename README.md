@@ -9,5 +9,6 @@ npm run dev     # http://localhost:3000
 
 Routes: `/` lab bench, `/dashboard`, `/inventory`, `/safety`, `/achievements`.
 
-The lab assistant chat calls Claude through `app/api/chat/route.js`. Copy `.env.example` to `.env.local` and set
-`ANTHROPIC_API_KEY` to enable it. Without a key the chat falls back to the built-in answers.
+The lab assistant chat goes through `app/api/chat/route.js`: it asks the n8n RAG webhook in `RAG_WEBHOOK_URL` first
+(GET, question in `chatInput`, conversation id in `sessionId`), then Claude if `ANTHROPIC_API_KEY` is set, then the
+built-in answers. Copy `.env.example` to `.env.local` to configure it.

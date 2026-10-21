@@ -1,79 +1,141 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { CHEMS, FORMLBL, GLASS, SOL, TABS, derive, isC, liquid, uid } from '@/lib/chem';
+import { AMTS, EQUIP, HAZ, REAG, TABS, TAPLBL, fullName, isC } from '@/lib/chem';
 import { useT } from '@/lib/i18n';
-import { useLab } from '@/lib/lab';
-import { Card, Molecule } from './ui';
-import Glass from './Glass';
+import { buretteReading, fmtTime, useLab } from '@/lib/lab';
+import { Badge, Btn, Card, Icon, Seg } from './ui';
+import { BurnerSVG, BuretteSVG, Pour, ShelfIcon, Vessel, surfaceY } from './Apparatus';
+import { Alerts, Notebook, Procedure, Readings } from './Panels';
+
+const payload=e=>{try{return JSON.parse(e.dataTransfer.getData('text/plain'))}catch(_){return null}};
+const drag=x=>e=>{e.stopPropagation();e.dataTransfer.setData('text/plain',JSON.stringify(x))};
+export const stationName=(items,s,T)=>T(EQUIP[s.kind].n)+' '+(items.filter(i=>i.kind===s.kind).indexOf(s)+1);
+
+function Container({c}){
+ const {sel,setSel,dispense,toggle,pours}=useLab();const T=useT();
+ const [over,setOver]=useState(false);
+ const onDrop=e=>{e.preventDefault();e.stopPropagation();setOver(false);const x=payload(e);if(!x)return;
+  if(x.k==='reag')dispense(c.id,x.id);else if(x.k==='equip'&&['therm','probe','rod'].includes(x.id))toggle(c.id,x.id==='rod'?'stir':x.id)};
+ return <div draggable onDragStart={drag({k:'move',id:c.id})} onClick={e=>{e.stopPropagation();setSel(c.id)}} onDragOver={e=>{e.preventDefault();setOver(true)}} onDragLeave={()=>setOver(false)} onDrop={onDrop}
+  className={'relative h-[190px] w-[120px] shrink-0 cursor-pointer rounded-md transition '+(sel===c.id?'bg-brand-50/50 ring-2 ring-brand-600/50':over?'ring-2 ring-emerald-500/60':'hover:bg-white/40')}>
+  {pours[c.id]&&<Pour key={pours[c.id].k} pr={pours[c.id]} c={c}/>}
+  {c.T>75&&c.water>0&&[0,1,2].map(i=><span key={i} className="vap" style={{left:22+i*26,top:28,animationDelay:i*.7+'s'}}/>)}
+  <Vessel c={c} d={c.d}/>
+  <div className="absolute left-1 top-1 rounded bg-stone-900/80 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white">{c.label}</div>
+  <div className="absolute right-1 top-1 flex flex-col items-end gap-0.5 font-mono text-[11px]">
+   {c.therm&&<span className="rounded bg-white/90 px-1 text-rose-700 ring-1 ring-stone-200">{Math.min(c.T,110).toFixed(1)} °C</span>}
+   {c.probe&&<span className="rounded bg-white/90 px-1 text-stone-800 ring-1 ring-stone-200">pH {c.d.pH!=null?c.d.pH.toFixed(2):'—'}</span>}</div>
+ </div>;
+}
+
+function Slot({at}){
+ const {cs,sel,place}=useLab();const T=useT();const cur=cs.find(c=>c.id===sel);
+ return <div onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();e.stopPropagation();const x=payload(e);if(x&&x.k==='move')place(x.id,at)}}
+  className="flex h-[190px] w-[120px] shrink-0 flex-col items-center justify-end pb-2">
+  <div className="flex h-[120px] w-[100px] flex-col items-center justify-center gap-2 rounded-md border border-dashed border-stone-400/70 p-2 text-center text-[11px] leading-tight text-stone-500">
+   {T('Place a beaker or flask here')}{cur&&cur.at!==at&&<button onClick={e=>{e.stopPropagation();place(cur.id,at)}} className="rounded bg-brand-700 px-2 py-1 font-medium text-white hover:bg-brand-600">{T('Move')} {cur.label}</button>}</div></div>;
+}
+
+function Controls({s,children}){
+ const {items,remove}=useLab();const T=useT();
+ return <div className="w-full rounded-md border border-line bg-paper p-2 text-xs shadow-sm">
+  <div className="mb-1.5 flex items-center justify-between"><b className="text-stone-700">{stationName(items,s,T)}</b><button onClick={()=>remove(s.id)} aria-label={T('Remove')} className="rounded p-0.5 text-stone-400 hover:bg-rose-50 hover:text-rose-600"><Icon n="x" className="h-3.5 w-3.5"/></button></div>
+  {children}</div>;
+}
+
+function Burner({b,held,part}){
+ const {patch}=useLab();const T=useT();
+ if(part==='app')return <div className="flex flex-col items-center">{held?<Container c={held}/>:<Slot at={b.id}/>}<div style={{marginTop:-9}}><BurnerSVG gas={b.gas} air={b.air}/></div></div>;
+ return <Controls s={b}><div className="space-y-1.5">
+   <label className="flex items-center gap-2 text-stone-600">{T('Gas')}<input type="range" min="0" max="10" value={b.gas} onChange={e=>patch(b.id,{gas:+e.target.value})} className="min-w-0 flex-1 accent-brand-700"/><span className="w-10 text-right font-mono">{b.gas?b.gas+'/10':T('off')}</span></label>
+   <div className="flex items-center justify-between text-stone-600">{T('Air hole')}<Seg val={b.air} onChange={v=>patch(b.id,{air:v})} opts={[[false,T('Closed')],[true,T('Open')]]}/></div></div></Controls>;
+}
+
+function Burette({b,held,part}){
+ const {patch,fill,drop,place}=useLab();const T=useT();
+ const [ch,setCh]=useState(b.ch||'hcl01');
+ if(part==='app')return <div className="relative h-[360px] w-[140px]" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();e.stopPropagation();const x=payload(e);if(!x)return;if(x.k==='move')place(x.id,b.id);else if(x.k==='reag'&&REAG[x.id].f==='sol')fill(b.id,x.id)}}>
+   <BuretteSVG b={b} land={held?202+surfaceY(held):346}/><div className="absolute left-2" style={{top:162}}>{held?<Container c={held}/>:<Slot at={b.id}/>}</div></div>;
+ return <Controls s={b}><div className="space-y-1.5">
+   <div className="flex gap-1"><select value={ch} onChange={e=>setCh(e.target.value)} className="min-w-0 flex-1 rounded border border-line bg-paper px-1 py-1 text-xs">{Object.entries(REAG).filter(([,r])=>r.f==='sol').map(([k,r])=><option key={k} value={k}>{fullName(r,T)}</option>)}</select>
+    <button onClick={()=>fill(b.id,ch)} className="rounded border border-line px-2 hover:bg-stone-50">{T('Fill')}</button></div>
+   <div className="flex items-center justify-between"><span className="text-stone-600">{T('Reading')}</span><b className="font-mono text-sm">{b.ch?buretteReading(b).toFixed(2)+' mL':'—'}</b></div>
+   <div className="grid grid-cols-4 gap-0.5 rounded-md border border-line bg-sand p-0.5">{TAPLBL.map((l,i)=><button key={l} onClick={()=>patch(b.id,{tap:i})} className={'truncate rounded px-0.5 py-1 text-[11px] font-medium '+(b.tap===i?'bg-paper text-stone-900 shadow-sm ring-1 ring-stone-200':'text-stone-500 hover:text-stone-800')}>{T(l)}</button>)}</div>
+   <button onClick={()=>drop(b.id)} disabled={!b.ch} className="w-full rounded border border-line py-1 hover:bg-stone-50 disabled:opacity-40">{T('Add one drop')} (0.05 mL)</button></div></Controls>;
+}
+
+function Balance({b,held,part}){
+ const {tare}=useLab();const T=useT();
+ const g=(held?held.glass+held.mass:0)-b.tare;
+ if(part!=='app')return <Controls s={b}><p className="text-stone-500">{T('Press Tare to set the reading to zero with the container on the pan.')}</p></Controls>;
+ return <div className="flex flex-col items-center">
+  {held?<Container c={held}/>:<Slot at={b.id}/>}
+  <div className="-mt-1.5 h-2 w-[132px] rounded-sm bg-gradient-to-b from-stone-200 to-stone-400 shadow-sm"/>
+  <div className="h-3 w-4 bg-stone-500"/>
+  <div className="w-[164px] rounded-md border border-stone-400 bg-gradient-to-b from-stone-100 to-stone-300 p-2 shadow">
+   <div className="rounded bg-[#1d2b24] px-2 py-1 text-right font-mono text-base text-[#a7f3c0]">{g.toFixed(2)} g</div>
+   <div className="mt-1.5 flex justify-between"><button onClick={()=>tare(b.id)} className="rounded bg-stone-700 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-stone-600">{T('Tare')}</button><span className="text-[10px] text-stone-500">max 600 g · d=0.01 g</span></div></div></div>;
+}
+
+function Inspector(){
+ const {cs,items,sel,toggle,place,empty,remove}=useLab();const T=useT();
+ const c=cs.find(i=>i.id===sel);if(!c)return null;
+ const stations=items.filter(i=>!isC(i));
+ const tog=(f,icon,l)=><Btn onClick={()=>toggle(c.id,f)} className={c[f]?'!border-brand-600 !bg-brand-50 !text-brand-800':''}><Icon n={icon}/>{T(l)}</Btn>;
+ const contents=Object.entries(c.src).map(([k,v])=>{const r=REAG[k];return fullName(r,T)+' · '+(r.f==='sol'?(+v.toFixed(2))+' mL':r.f==='ind'?v+' '+T('drops'):v+' '+T(r.sp==='NH4Cls'?'spatulas':'pieces'))});
+ return <Card className="p-3">
+  <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><b className="text-stone-900">{T(EQUIP[c.kind].n)} {c.label}</b><span className="font-mono text-sm text-stone-600">≈ {c.water.toFixed(c.water<10?1:0)} mL</span>
+   {c.d.xtal>.05&&<Badge tone="brand">{T('Crystals')} {c.d.xtal.toFixed(2)} g</Badge>}{c.d.ppt&&<Badge tone="brand">{T('Precipitate')}</Badge>}{c.d.gr>1e-7&&<Badge>{T('Gas bubbling')}</Badge>}{c.d.boiling&&<Badge tone="rose">{T('Boiling')}</Badge>}</div>
+  <p className="mt-1 text-xs text-stone-500">{contents.length?contents.join('  ·  '):T('Empty')}</p>
+  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+   {tog('therm','thermo','Thermometer')}{tog('probe','drop','pH meter')}{tog('stir','flask','Stir')}
+   <select value={c.at||''} onChange={e=>place(c.id,e.target.value||null)} className="rounded-md border border-line bg-paper px-2 py-1.5 text-sm" aria-label={T('Position')}>
+    <option value="">{T('On the bench')}</option>{stations.map(s=><option key={s.id} value={s.id}>{stationName(items,s,T)}</option>)}</select>
+   <Btn onClick={()=>empty(c.id)}>{T('Empty and rinse')}</Btn><Btn kind="danger" onClick={()=>remove(c.id)}><Icon n="trash"/>{T('Remove')}</Btn></div></Card>;
+}
 
 export default function Bench(){
- const {items,setItems,sel,setSel,ex,latch,alerts,warn,mode,setMode,hist,stir,setStir,toast,setToast}=useLab();
+ const {items,cs,sel,setSel,amt,setAmt,speed,setSpeed,t,toast,setToast,addEquip,dispense,place,clear,ex}=useLab();
  const T=useT();
- const [tab,setTab]=useState(TABS[0]),[q,setQ]=useState(''),[pours,setPours]=useState({});
- const addItem=k=>{const it={id:uid(),kind:k,m:{},t:22,on:false,flame:5};setItems(p=>[...p,it]);if(isC(it))setSel(it.id)};
- const pour=(id,ch)=>{
-  const it=items.find(i=>i.id===id);if(!it)return;
-  const sol=SOL.includes(ch),amt=sol?(mode==='drop'?1:5):(mode==='drop'?2:25),m={...it.m};let dT=0;
-  if(!sol&&liquid(m)+amt>250){warn('warn','Overflow! A container holds 250 mL maximum.');return}
-  if(ch==='water'&&(m.hcl||0)>0){warn('danger','Never add water to concentrated acid. Add acid to water slowly to avoid splashing.');dT+=6}
-  if(ch==='hcl'&&(m.naoh||0)>0){dT+=Math.min(amt,m.naoh)*.4;warn('info','Neutralisation is exothermic: HCl + NaOH → NaCl + H₂O.')}
-  if(ch==='naoh'&&(m.hcl||0)>0)dT+=Math.min(amt,m.hcl)*.4;
-  if(sol&&(m.hcl||0)>0){dT+=ch==='mg'?16:10;warn('warn','Hydrogen gas released. Keep flames away.');if(items.some(i=>i.kind==='bunsen'&&i.on))warn('danger','Open flame near hydrogen is an explosion risk. Turn the burner off.')}
-  if(ch==='cuso4'&&(m.naoh||0)>0)warn('info','Blue precipitate of Cu(OH)₂ is forming.');
-  m[ch]=(m[ch]||0)+amt;
-  const k=uid();setPours(p=>({...p,[id]:{ch,k,drop:mode==='drop'}}));setSel(id);
-  setTimeout(()=>setItems(p=>p.map(i=>i.id===id?{...i,m:{...i.m,[ch]:(i.m[ch]||0)+amt},t:Math.min(100,i.t+dT)}:i)),650);
-  setTimeout(()=>setPours(p=>p[id]&&p[id].k===k?{...p,[id]:null}:p),1500);
- };
- const tapShelf=(k,id)=>{
-  if(k==='glass'){if(id==='pipette'){setMode('drop');setToast('Dropper mode on: 2 mL per drop');return}addItem(id);return}
-  const c=items.find(i=>i.id===sel&&isC(i))||items.find(isC);
-  c?pour(c.id,id):setToast('Place a beaker or flask first');
- };
- const list=useMemo(()=>{const all=[...Object.entries(CHEMS).map(([id,v])=>({id,k:'chem',...v})),...Object.entries(GLASS).map(([id,v])=>({id,k:'glass',cat:'Glassware',...v}))];
-  return all.filter(x=>q?x.n.toLowerCase().includes(q.toLowerCase())||T(x.n).includes(q):x.cat===tab)},[tab,q,T]);
- const cs=items.filter(isC),cur=cs.find(c=>c.id===sel)||cs[0],cd=cur&&derive(cur),bun=items.find(i=>i.kind==='bunsen');
- const done=latch.filter(Boolean).length;
- const pts=hist.map((v,i)=>`${i*(160/39)},${50-(v-15)*0.5}`).join(' ');
- return <div className="grid h-full grid-cols-1 gap-3 p-3 lg:grid-cols-[250px_1fr_300px] overflow-auto">
-  <Card className="flex flex-col p-3 min-h-0">
-   <input value={q} onChange={e=>setQ(e.target.value)} placeholder={T('Search chemicals and tools')} className="w-full rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-teal-400"/>
-   <div className="mt-2 flex flex-wrap gap-1">{TABS.map(t=><button key={t} onClick={()=>{setTab(t);setQ('')}} className={'rounded-full px-2.5 py-1 text-xs '+(tab===t&&!q?'bg-teal-700 text-white':'bg-stone-100 hover:bg-stone-200')}>{T(t)}</button>)}</div>
-   <div className="mt-3 grid grid-cols-2 gap-2 overflow-auto">{list.map(x=><div key={x.id} draggable onDragStart={e=>e.dataTransfer.setData('text/plain',JSON.stringify({k:x.k,id:x.id}))}
-     onClick={()=>tapShelf(x.k,x.id)} className="cursor-grab rounded-xl border border-stone-300 bg-stone-50 p-3 text-center text-xs hover:border-teal-400 active:cursor-grabbing"><div className="text-2xl">{x.e}</div>{T(x.n)}{x.f&&<div className="mt-1 text-[10px] text-teal-700">{T(FORMLBL[x.f])}</div>}</div>)}
-    {!list.length&&<p className="col-span-2 text-sm text-stone-500">{T('Nothing matches that search.')}</p>}</div>
-   <p className="mt-auto pt-3 text-xs text-stone-500">{T('Drag items onto the bench, or tap to add. Tap a chemical to pour into the selected container.')}</p></Card>
+ const [tab,setTab]=useState(TABS[0]),[q,setQ]=useState('');
+ const cur=cs.find(c=>c.id===sel);
+ const tapShelf=(k,id)=>{if(k==='equip'){addEquip(id);return}const c=cur||cs[0];c?dispense(c.id,id):setToast('Place a beaker or flask on the bench first')};
+ const list=useMemo(()=>{const all=[...Object.entries(REAG).map(([id,r])=>({id,k:'reag',...r})),...Object.entries(EQUIP).map(([id,r])=>({id,k:'equip',cat:'Apparatus',...r}))];
+  const s=q.trim().toLowerCase();return all.filter(x=>s?(x.n+' '+x.c+' '+(x.fm||'')).toLowerCase().includes(s)||T(x.n).includes(q.trim()):x.cat===tab)},[tab,q,T]);
+ const free=items.filter(i=>!isC(i)||!items.some(s=>s.id===i.at));
+ const held=s=>cs.find(c=>c.at===s.id);
+ const W=i=>isC(i)?128:i.kind==='burette'?224:184;
+ const part=(i,p)=>isC(i)?<Container c={cs.find(c=>c.id===i.id)}/>:i.kind==='bunsen'?<Burner b={i} held={held(i)} part={p}/>:i.kind==='burette'?<Burette b={i} held={held(i)} part={p}/>:<Balance b={i} held={held(i)} part={p}/>;
+ return <div className="grid min-h-full grid-cols-1 gap-3 p-3 xl:h-full xl:grid-cols-[272px_minmax(0,1fr)_320px]">
+  <Card className="flex min-h-0 flex-col">
+   <div className="border-b border-line/70 p-3"><div className="relative"><input value={q} onChange={e=>setQ(e.target.value)} placeholder={T('Search chemicals and apparatus')} className="w-full rounded-md border border-line bg-stone-50 px-3 py-1.5 text-sm outline-none focus:border-brand-600 focus:bg-paper"/></div>
+    <div className="mt-2 flex flex-wrap gap-1">{TABS.map(x=><button key={x} onClick={()=>{setTab(x);setQ('')}} className={'rounded px-2 py-1 text-xs font-medium '+(tab===x&&!q?'bg-brand-700 text-white':'text-stone-600 hover:bg-sand')}>{T(x)}</button>)}</div></div>
+   {(tab==='Solutions'||tab==='Household')&&!q&&<div className="border-b border-line/70 px-3 py-2"><div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-stone-500">{T('Amount to add')}</div>
+    <Seg val={amt} onChange={setAmt} opts={AMTS.map(([v,l])=>[v,T(l)])} className="flex-wrap"/></div>}
+   <div className="min-h-0 flex-1 overflow-auto p-1.5">{list.map(x=><div key={x.id} role="button" tabIndex={0} draggable onDragStart={drag({k:x.k,id:x.id})} onClick={()=>tapShelf(x.k,x.id)} onKeyDown={e=>e.key==='Enter'&&tapShelf(x.k,x.id)}
+     className="flex cursor-grab items-center gap-3 rounded-md px-2 py-1.5 hover:bg-stone-50 active:cursor-grabbing">
+     <ShelfIcon k={x.k} id={x.id} className="h-11 w-9 shrink-0"/>
+     <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium text-stone-800">{T(x.n)}</div><div className="truncate text-xs text-stone-500">{x.k==='reag'&&x.id==='naohx'?T('unknown concentration'):T(x.c)}</div></div>
+     {x.haz&&x.haz!=='None'&&<Badge tone={HAZ[x.haz]}>{T(x.haz)}</Badge>}</div>)}
+    {!list.length&&<p className="p-3 text-sm text-stone-500">{T('Nothing matches that search.')}</p>}</div>
+   <p className="border-t border-line/70 p-3 text-xs leading-relaxed text-stone-500">{T('Tap a reagent to add it to the selected container, or drag it onto one. Indicators add one drop and solids add one piece at a time.')}</p></Card>
 
-  <div className="flex min-h-[420px] flex-col gap-3">
-   <Card className="flex flex-wrap items-center gap-3 p-3 text-sm">
-    <span className="font-semibold">{T('Tools')}</span>
-    <div className="flex rounded-lg bg-stone-50 p-1">{[['pour','Pour 25 mL'],['drop','Dropper 2 mL']].map(([k,l])=><button key={k} onClick={()=>setMode(k)} className={'rounded-md px-3 py-1 '+(mode===k?'bg-teal-700 text-white':'')}>{T(l)}</button>)}</div>
-    <label className="flex items-center gap-2"><input type="checkbox" checked={stir} onChange={e=>setStir(e.target.checked)}/>{T('Stirrer')}</label>
-    {bun&&<><label className="flex items-center gap-2"><input type="checkbox" checked={bun.on} onChange={e=>setItems(p=>p.map(i=>i.id===bun.id?{...i,on:e.target.checked}:i))}/>{T('Burner')}</label>
-     <label className="flex items-center gap-2">{T('Flame')}<input type="range" min="1" max="10" value={bun.flame} onChange={e=>setItems(p=>p.map(i=>i.id===bun.id?{...i,flame:+e.target.value}:i))}/></label></>}
-    <button onClick={()=>{setItems([]);setSel(null)}} className="ml-auto rounded-lg bg-stone-100 px-3 py-1 hover:bg-rose-600">{T('Clear bench')}</button></Card>
-   <div className="bench relative flex flex-1 flex-wrap items-end justify-center gap-6 overflow-auto rounded-2xl border border-stone-300 p-6 pb-10"
-    onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();try{const x=JSON.parse(e.dataTransfer.getData('text/plain'));x.k==='glass'?tapShelf('glass',x.id):setToast('Drop chemicals onto a beaker or flask')}catch(_){}}}>
-    {!items.length&&<div className="m-auto text-center text-stone-500"><Molecule className="mx-auto h-20 w-20 opacity-70"/>{T('Drag a beaker from the Glassware tab to start.')}</div>}
-    {items.map(it=>isC(it)?<Glass key={it.id} it={it} d={derive(it)} sel={it.id===sel} stir={stir} pr={pours[it.id]} onSel={setSel} onPour={pour} onDel={id=>setItems(p=>p.filter(i=>i.id!==id))}/>
-     :<div key={it.id} className="relative flex w-24 flex-col items-center text-xs text-stone-600">
-      {it.kind==='bunsen'&&<>{it.on&&<div className="h-12 w-6 rounded-full bg-gradient-to-t from-blue-500 via-amber-400 to-transparent origin-bottom" style={{transform:`scaleY(${.4+it.flame*.1})`,animation:'flame .3s infinite'}}/>}<div className="h-14 w-10 rounded-t bg-stone-500"/><div className="h-3 w-20 rounded bg-stone-600"/>{T('Bunsen')} {T(it.on?'on':'off')}</>}
-      {it.kind==='stirrer'&&<><div className="text-4xl">🌀</div>{T('Stirrer')}<button className="mt-1 rounded bg-stone-100 px-2 py-0.5" onClick={()=>setStir(!stir)}>{T(stir?'Stop':'Start')}</button></>}
-      {it.kind==='therm'&&<><div className="text-4xl">🌡️</div><b className="text-lg text-amber-700">{cur?cur.t.toFixed(1):'--'}°C</b></>}
-      <button onClick={()=>setItems(p=>p.filter(i=>i.id!==it.id))} className="absolute -top-2 right-1 h-5 w-5 rounded-full bg-stone-200 hover:bg-rose-600">×</button></div>)}
-    {toast&&<div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-stone-100 px-4 py-1.5 text-sm shadow">{toast}</div>}</div></div>
+  <div className="flex min-w-0 flex-col gap-3">
+   <Card className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 text-sm">
+    <b className="text-stone-800">{T(ex?ex.name:'Free practice')}</b>
+    <span className="flex items-center gap-1.5 text-stone-500"><Icon n="clock"/>{T('Lab time')} <span className="font-mono text-stone-900">{fmtTime(t)}</span></span>
+    <Seg val={speed} onChange={setSpeed} opts={[[0,<Icon key="p" n="pause" className="h-3.5 w-3.5"/>],[1,'×1'],[10,'×10'],[30,'×30']]}/>
+    <Btn kind="danger" onClick={clear} className="ml-auto"><Icon n="trash"/>{T('Clear bench')}</Btn></Card>
+   <div className="bench relative flex min-h-[460px] flex-1 flex-col overflow-x-auto rounded-lg border border-line" onClick={()=>setSel(null)}
+    onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();const x=payload(e);if(!x)return;
+     if(x.k==='move')place(x.id,null);else if(x.k==='equip')['therm','probe','rod'].includes(x.id)?setToast('Drop it onto a beaker or flask'):addEquip(x.id);else setToast('Drop chemicals onto a beaker or flask')}}>
+    {!items.length?<div className="flex min-h-[460px] items-center justify-center p-6"><div className="max-w-sm text-center text-sm text-stone-500"><ShelfIcon k="equip" id="beaker" className="mx-auto mb-2 h-14 w-12 opacity-60"/>{T('Open the Apparatus tab and add a beaker or conical flask to start.')}</div></div>
+    :<div className="flex min-h-full min-w-max flex-col">
+     <div className="flex flex-1 items-end gap-6 px-6 pt-6">{free.map(i=><div key={i.id} className="flex shrink-0 justify-center" style={{width:W(i)}}>{part(i,'app')}</div>)}</div>
+     <div className="h-3 border-t-2 border-[#5a524a] bg-[#403a34]"/>
+     <div onClick={e=>e.stopPropagation()} className="flex min-h-[64px] items-start gap-6 bg-[#332e29] px-6 pb-4 pt-1">{free.map(i=><div key={i.id} className="shrink-0" style={{width:W(i)}}>{!isC(i)&&part(i,'ctl')}</div>)}</div></div>}
+    {toast&&<div className="absolute left-1/2 top-3 z-30 -transtone-x-1/2 rounded-md bg-stone-900 px-3 py-1.5 text-sm text-white shadow-lg">{T(toast)}</div>}</div>
+   <Inspector/></div>
 
-  <div className="flex flex-col gap-3 overflow-auto">
-   <Card className="p-4"><div className="flex justify-between text-sm"><b>{T(ex?ex.name:'Free play')}</b>{ex&&<span className="text-emerald-600">{done}/{ex.steps.length}</span>}</div>
-    {ex?<><div className="mt-2 h-1.5 rounded bg-stone-100"><div className="h-full rounded bg-emerald-400 transition-all" style={{width:done/ex.steps.length*100+'%'}}/></div>
-     <ul className="mt-3 space-y-2 text-sm">{ex.steps.map((s,i)=><li key={i} className={'flex gap-2 '+(latch[i]?'text-emerald-700':'text-stone-600')}><span>{latch[i]?'✔':'○'}</span>{T(s[0])}</li>)}</ul></>
-     :<p className="mt-2 text-sm text-stone-500">Start an experiment from the dashboard for a guided checklist.</p>}</Card>
-   <Card className="p-4 text-sm"><b>{T('Live data')}</b>{cd?<div className="mt-2 space-y-3">
-    <div><div className="flex justify-between"><span>{T('Temperature')}</span><b className="text-amber-700">{cur.t.toFixed(1)} °C</b></div><div className="h-2 rounded bg-stone-100"><div className="h-full rounded bg-amber-400 transition-all" style={{width:cur.t+'%'}}/></div></div>
-    <div><div className="flex justify-between"><span>pH</span><b className="text-teal-700">{cd.pH.toFixed(2)}</b></div><div className="relative h-2 rounded" style={{background:'linear-gradient(90deg,#ef4444,#facc15,#22c55e,#3b82f6,#8b5cf6)'}}><span className="absolute -top-1 h-4 w-1 rounded bg-white transition-all" style={{left:cd.pH/14*100+'%'}}/></div></div>
-    <div className="flex justify-between"><span>{T('Mass')}</span><b className="text-emerald-700">{cd.mass.toFixed(1)} g</b></div>
-    <svg viewBox="0 0 160 50" className="w-full rounded bg-stone-50"><polyline fill="none" stroke="#b8975a" strokeWidth="1.5" points={pts}/></svg></div>
-    :<p className="mt-2 text-stone-500">{T('Add a container to see meters.')}</p>}</Card>
-   <Card className="!border-amber-400/60 p-4 text-sm"><b className="text-amber-600">{T('⚠ Safety alerts')}</b>
-    <div className="mt-2 space-y-2">{alerts.length?alerts.map(a=><div key={a.k} className={'rounded-lg p-2 '+(a.l==='danger'?'bg-rose-500/20 text-rose-800':a.l==='warn'?'bg-amber-500/15 text-amber-800':'bg-teal-500/15 text-teal-800')}>{a.msg}</div>):<div className="text-emerald-600">{T('All clear. Goggles on.')}</div>}</div></Card></div></div>;
+  <div className="flex min-h-0 flex-col gap-3 xl:overflow-auto"><Procedure/><Readings/><Notebook/><Alerts/></div></div>;
 }

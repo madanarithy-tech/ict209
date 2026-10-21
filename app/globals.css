@@ -3,21 +3,26 @@
 @tailwind utilities;
 
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
-html,body{height:100%;margin:0;font-family:var(--font-inter),system-ui,sans-serif;color:#292524;
-background:radial-gradient(60% 45% at 6% 0%,rgba(196,181,253,.28),transparent 62%),radial-gradient(50% 40% at 100% 8%,rgba(94,234,212,.22),transparent 62%),radial-gradient(60% 50% at 75% 100%,rgba(184,151,90,.12),transparent 60%),#faf8f3;background-attachment:fixed}
-h1,h2,h3,.serif{font-family:var(--font-serif),Georgia,serif;font-weight:700}
-.wc{background:radial-gradient(120% 80% at 0% 0%,rgba(196,181,253,.2),transparent 55%),radial-gradient(100% 70% at 100% 100%,rgba(94,234,212,.16),transparent 55%),#fffdf9;box-shadow:0 10px 30px -14px rgba(91,76,140,.25)}
-@keyframes rise{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-95px);opacity:0}}
-@keyframes vap{0%{transform:translateY(0) scale(.6);opacity:.5}100%{transform:translateY(-80px) scale(2);opacity:0}}
-@keyframes flame{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.18) scaleX(.9)}}
-@keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
-@keyframes rod{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
-body.km,body.km h1,body.km h2,body.km h3,body.km .serif{font-family:var(--font-khmer),var(--font-inter),sans-serif;line-height:1.7}
-@keyframes tilt{0%{opacity:0;transform:rotate(0)}20%,85%{opacity:1;transform:rotate(62deg)}100%{opacity:0;transform:rotate(0)}}
-@keyframes stream{0%{opacity:1;transform:scaleY(0)}30%,85%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1)}}
-@keyframes pf{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(95px)}}
-.bub{position:absolute;bottom:6px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9);border:1px solid rgba(100,116,139,.4);animation:rise 1.6s infinite}
-.vap{position:absolute;top:-8px;width:26px;height:26px;border-radius:50%;background:rgba(148,163,184,.4);filter:blur(7px);animation:vap 2.4s infinite}
-.conf{position:fixed;top:-20px;width:9px;height:14px;animation:fall 3.2s linear forwards;z-index:60}
-.bench{background:linear-gradient(#fbf9f4,#f3eee4 58%,#e3d9c4 58%,#efe8d8)}
-@media (prefers-reduced-motion:reduce){.bub,.vap,.conf{animation:none}}
+html,body{height:100%;margin:0;font-family:var(--font-inter),system-ui,sans-serif;color:#292524;background:#faf8f3;-webkit-font-smoothing:antialiased}
+body.km,body.km button,body.km input,body.km select{font-family:var(--font-inter),var(--font-khmer),sans-serif;line-height:1.65}
+/* Lab wall above a dark resin bench top. */
+.bench{background:linear-gradient(#f8f5ee,#eee8dc)}
+@keyframes gb{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(var(--h));opacity:0}}
+.gb{animation:gb 1.4s linear infinite}
+@keyframes vap{0%{transform:translateY(0) scale(.6);opacity:.45}100%{transform:translateY(-70px) scale(2);opacity:0}}
+.vap{position:absolute;width:24px;height:24px;border-radius:50%;background:rgba(203,213,225,.55);filter:blur(6px);animation:vap 2.4s infinite;pointer-events:none}
+@keyframes flame{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.06) scaleX(.96)}}
+.flame{transform-box:fill-box;transform-origin:bottom center;animation:flame .18s infinite}
+.flame-y{animation-duration:.45s}
+@keyframes rod{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.rod{animation:rod .6s ease-in-out infinite}
+/* Pouring: everything starts at the bottle mouth or dropper tip and ends at the liquid surface (--d). */
+@keyframes fall{0%{transform:translateY(0);opacity:1}92%{opacity:1}100%{transform:translateY(var(--d));opacity:0}}
+.fall{animation:fall .3s ease-in forwards}
+@keyframes tiltb{0%{opacity:0;transform:rotate(35deg)}22%,80%{opacity:1;transform:rotate(118deg)}100%{opacity:0;transform:rotate(35deg)}}
+.tiltb{animation:tiltb 1.3s ease-in-out forwards}
+@keyframes stream{0%,22%{opacity:1;transform:scaleY(0)}40%,80%{opacity:1;transform:scaleY(1)}100%{opacity:0;transform:scaleY(1)}}
+.stream{transform-box:fill-box;transform-origin:top;animation:stream 1.3s ease-in forwards}
+@keyframes dropper{0%,100%{opacity:0}15%,80%{opacity:1}}
+.dropper{animation:dropper 1s ease-in-out forwards}
+@media (prefers-reduced-motion:reduce){.gb,.vap,.flame,.rod,.fall,.tiltb,.stream,.dropper{animation:none}}
