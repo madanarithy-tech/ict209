@@ -26,7 +26,7 @@ export function Procedure(){
 }
 
 // Line chart of one logged reading against lab time, with a hover crosshair.
-function LogChart({pts,unit,dp}){
+export function LogChart({pts,unit,dp}){
  const [hv,setHv]=useState(null);
  const W=288,H=132,l=36,r=8,t=8,b=20;
  if(pts.length<2)return <div className="grid h-[132px] place-items-center rounded-md bg-stone-50 text-xs text-stone-400">…</div>;

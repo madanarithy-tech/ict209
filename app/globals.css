@@ -25,4 +25,9 @@ body.km,body.km button,body.km input,body.km select{font-family:var(--font-inter
 .stream{transform-box:fill-box;transform-origin:top;animation:stream 1.3s ease-in forwards}
 @keyframes dropper{0%,100%{opacity:0}15%,80%{opacity:1}}
 .dropper{animation:dropper 1s ease-in-out forwards}
-@media (prefers-reduced-motion:reduce){.gb,.vap,.flame,.rod,.fall,.tiltb,.stream,.dropper{animation:none}}
+/* Reaction demos: steam drawn in SVG, and lead(II) iodide crystals catching the light. */
+@keyframes svap{0%{transform:translateY(0) scale(.6);opacity:.6}100%{transform:translateY(-60px) scale(2);opacity:0}}
+.svap{transform-box:fill-box;transform-origin:center;filter:blur(4px);animation:svap 2.4s infinite}
+@keyframes glint{0%,100%{opacity:.75}50%{opacity:1;filter:brightness(1.5)}}
+.glint{animation:glint 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.gb,.vap,.flame,.rod,.fall,.tiltb,.stream,.dropper,.svap,.glint{animation:none}}

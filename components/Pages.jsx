@@ -1,5 +1,6 @@
 'use client';
 import { EQUIP, EXPS, HAZ, REAG, TABS } from '@/lib/chem';
+import { DEMOS } from '@/lib/reactions';
 import { useT } from '@/lib/i18n';
 import { useLab } from '@/lib/lab';
 import { ShelfIcon } from './Apparatus';
@@ -36,10 +37,11 @@ export function Safety(){
 }
 
 export function Achievements(){
- const {done,passed,incidents}=useLab();
+ const {done,passed,incidents,ran,seen}=useLab();
  const T=useT();
  const B=[['First reaction','Complete any experiment',done.length>0],['Safety first','Pass the safety check',passed],['Careful worker','Complete an experiment with no serious safety warnings',done.length>0&&incidents===0],
-  ['Analyst','Complete the acid–base titration',done.includes('titr')],['Crystal grower','Grow copper(II) sulfate crystals',done.includes('cryst')],['Lab master','Complete every experiment',done.length===EXPS.length]];
+  ['Analyst','Complete the acid–base titration',done.includes('titr')],['Crystal grower','Grow copper(II) sulfate crystals',done.includes('cryst')],['Lab master','Complete every experiment',done.length===EXPS.length],
+  ['Demonstrator','Run every reaction demonstration',ran.length===DEMOS.length],['Molecular detective','Watch every reaction at the atomic scale',seen.length===DEMOS.length]];
  return <div className="mx-auto max-w-4xl p-4 sm:p-8"><H1>{T('Progress')}</H1>
   <div className="mt-6 grid gap-3 sm:grid-cols-2">{B.map(b=><Card key={b[0]} className={'flex items-center gap-4 p-4 '+(b[2]?'':'opacity-70')}>
    <div className={'grid h-10 w-10 shrink-0 place-items-center rounded-full '+(b[2]?'bg-gold-50 text-gold-700 ring-1 ring-gold-200':'bg-stone-100 text-stone-400')}><Icon n={b[2]?'award':'lock'} className="h-5 w-5"/></div>

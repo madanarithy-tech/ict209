@@ -8,7 +8,12 @@ const P={
  flask:'M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3M7.5 15h9',thermo:'M14 14.5V5a2 2 0 0 0-4 0v9.5a4 4 0 1 0 4 0zM12 9v7',
  scale:'M12 4v16M5 20h14M5 8l-3 6a3 3 0 0 0 6 0zM19 8l-3 6a3 3 0 0 0 6 0zM5 8h14',drop:'M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z',
  lock:'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',send:'M4 12l16-8-6 16-3-7z',record:'M5 4h11l3 3v13H5zM9 4v5h6V4M8 14h8M8 17h5',
- crystal:'M12 3l6 6-6 12-6-12zM6 9h12M12 3v18',burette:'M11 2h2v14h-2zM10 16h4l-1 2h-2zM12 18v3M6 9h3M6 5h3M6 13h3',arrow:'M5 12h14M13 6l6 6-6 6',sound:'M4 9v6h4l5 4V5L8 9z'};
+ crystal:'M12 3l6 6-6 12-6-12zM6 9h12M12 3v18',burette:'M11 2h2v14h-2zM10 16h4l-1 2h-2zM12 18v3M6 9h3M6 5h3M6 13h3',arrow:'M5 12h14M13 6l6 6-6 6',sound:'M4 9v6h4l5 4V5L8 9z',
+ atom:'M12 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM12 21c2.2 0 4-4 4-9s-1.8-9-4-9-4 4-4 9 1.8 9 4 9zM4.2 16.5c1.1 1.9 5.5 1.5 9.8-1s6.9-6.1 5.8-8-5.5-1.5-9.8 1-6.9 6.1-5.8 8zM4.2 7.5c-1.1 1.9 1.5 5.5 5.8 8s8.7 2.9 9.8 1-1.5-5.5-5.8-8-8.7-2.9-9.8-1z',
+ fire:'M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-1 2-2 3-3.5 4C9 7.5 8.5 6.5 8.5 5 7 7 6 9.5 6 15a6 6 0 0 0 6 6zM12 21a2.5 2.5 0 0 1-2.5-2.5c0-1.8 1.5-2.7 2.5-4.5 1 1.8 2.5 2.7 2.5 4.5A2.5 2.5 0 0 1 12 21z',
+ foam:'M9 21h6M10 21V9M14 21V9M8 9a3 3 0 0 1 1-5.5A3 3 0 0 1 14.5 3 3 3 0 0 1 17 8.5 2 2 0 0 1 16 9z',
+ spark:'M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8',
+ back:'M19 12H5M11 6l-6 6 6 6',reset:'M4 4v6h6M4.5 15a8 8 0 1 0 1.9-8.3L4 10',step:'M6 5l9 7-9 7zM18 5v14',eye:'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'};
 export const Icon=({n,className='h-4 w-4',sw=1.6})=><svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]}/></svg>;
 export const Logo=({s=32})=><svg width={s} height={s} viewBox="0 0 32 32" aria-label="Digital Researching Lab logo"><rect width="32" height="32" rx="7" fill="#0f766e"/>
  <path d="M13 7h6M14 7v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V7" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><path d="M11.2 19h9.6l1.6 3a1 1 0 0 1-.9 1.5H10.5a1 1 0 0 1-.9-1.5z" fill="#5eead4"/></svg>;
